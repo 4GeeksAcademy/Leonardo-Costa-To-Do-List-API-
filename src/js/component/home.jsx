@@ -4,7 +4,7 @@ const TodoList = () => {
   const [tasks, setTasks] = useState([]);
   const [currentTask, setCurrentTask] = useState('');
 
-  const apiUrl = 'https://assets.breatheco.de/apis/fake/todos/user/winter1000'; // Replace 'winter1000' with your desired username
+  const apiUrl = 'https://assets.breatheco.de/apis/fake/todos/user/winter1000'; 
 
   useEffect(() => {
     fetchData();
