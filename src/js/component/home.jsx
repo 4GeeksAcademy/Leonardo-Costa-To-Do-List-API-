@@ -4,31 +4,120 @@ const TodoList = () => {
   const [tasks, setTasks] = useState([]);
   const [currentTask, setCurrentTask] = useState('');
 
+  const apiUrl = 'https://assets.breatheco.de/apis/fake/todos/user/winter1000'; // Replace 'winter1000' with your desired username
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      const response = await fetch(apiUrl);
+      if (!response.ok) {
+        await createUserList();
+      } else {
+        const tasksData = await response.json();
+        setTasks(tasksData);
+        console.log('Fetched tasks:', tasksData);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const createUserList = async () => {
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify([]),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create user list');
+      }
+
+      console.log('User list created successfully');
+      await fetchData();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const handleInputChange = (event) => {
     setCurrentTask(event.target.value);
   };
 
-  const handleInputKeyDown = (event) => {
+  const handleInputKeyDown = async (event) => {
     if (event.key === 'Enter') {
-      addTask();
+      await addTask();
     }
   };
 
-  const addTask = () => {
+  const addTask = async () => {
     if (currentTask.trim() !== '') {
-      setTasks([...tasks, { task: currentTask.toUpperCase(), isHovered: false }]);
-      setCurrentTask('');
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify([...tasks, { label: currentTask, done: false }]),
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Failed to add task. Server response: ${error}`);
+        }
+
+        await fetchData();
+        setCurrentTask('');
+      } catch (error) {
+        console.error(error);
+      }
     }
   };
 
-  const deleteTask = (index) => {
+  const deleteTask = async (index) => {
     const updatedTasks = [...tasks];
     updatedTasks.splice(index, 1);
     setTasks(updatedTasks);
+
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedTasks),
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Failed to delete task. Server response: ${error}`);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
-  const deleteAllTasks = () => {
-    setTasks([]);
+  const deleteAllTasks = async () => {
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Failed to delete all tasks. Server response: ${error}`);
+      }
+
+      await createUserList();
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const handleDeleteOnMouseEnter = (index) => {
@@ -42,12 +131,6 @@ const TodoList = () => {
     updatedTasks[index] = { ...updatedTasks[index], isHovered: false };
     setTasks(updatedTasks);
   };
-
-  useEffect(() => {
-    return () => {
-      // Cleanup code if needed
-    };
-  }, []);
 
   const itemCount = tasks.length;
 
@@ -70,14 +153,27 @@ const TodoList = () => {
               onMouseEnter={() => handleDeleteOnMouseEnter(index)}
               onMouseLeave={() => handleDeleteOnMouseLeave(index)}
             >
-              {task.task}
+              {task.label}
               {task.isHovered && (
-                <button
-                  onClick={() => deleteTask(index)}
-                  className="delete-button"
-                >
-                  X
-                </button>
+                <>
+                  <button
+                    onClick={() => deleteTask(index)}
+                    className="delete-button"
+                  >
+                    X
+                  </button>
+                  <button
+                    onClick={() => {
+                      const updatedLabel = prompt('Enter the updated label:');
+                      if (updatedLabel) {
+                        editTask(index, updatedLabel);
+                      }
+                    }}
+                    className="edit-button"
+                  >
+                    Edit
+                  </button>
+                </>
               )}
             </li>
           ))}
