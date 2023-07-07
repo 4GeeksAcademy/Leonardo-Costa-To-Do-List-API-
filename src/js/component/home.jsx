@@ -103,6 +103,32 @@ const TodoList = () => {
     }
   };
 
+  const editTask = async (index, updatedLabel) => {
+    const updatedTasks = [...tasks];
+    updatedTasks[index].label = updatedLabel;
+  
+    try {
+      const response = await fetch(apiUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updatedTasks),
+      });
+  
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Failed to edit task. Server response: ${error}`);
+      }
+  
+      await fetchData();
+      console.log('Task edited successfully:', { index, updatedLabel });
+    } catch (error) {
+      console.error(error);
+    }
+  };
+  
+
   const deleteAllTasks = async () => {
     try {
       const response = await fetch(apiUrl, {
